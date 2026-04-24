@@ -110,6 +110,9 @@ struct Params {
     /** Proof of work parameters */
     uint256 powLimit;
     bool fPowAllowMinDifficultyBlocks;
+    /** Block height at which min-difficulty blocks are no longer allowed.
+     *  0 means no such height (min-difficulty stays allowed forever if fPowAllowMinDifficultyBlocks is true). */
+    int nMinDiffDisableHeight;
     /**
       * Enforce BIP94 timewarp attack mitigation. On testnet4 this also enforces
       * the block storm mitigation.

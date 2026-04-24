@@ -183,6 +183,104 @@ void sanity_check_chainparams(const ArgsManager& args, ChainType chain_type)
     }
 }
 
+/* Test that min-difficulty blocks are allowed before nMinDiffDisableHeight */
+BOOST_AUTO_TEST_CASE(mindiff_before_disable_height)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, ChainType::TESTNET4);
+    const auto& consensus = chainParams->GetConsensus();
+
+    // Sanity: testnet4 must have the fork height configured
+    BOOST_REQUIRE(consensus.fPowAllowMinDifficultyBlocks);
+    BOOST_REQUIRE(consensus.nMinDiffDisableHeight > 0);
+
+    const unsigned int nProofOfWorkLimit = UintToArith256(consensus.powLimit).GetCompact();
+    const unsigned int normalBits = 0x1c0fffff; // some non-trivial difficulty
+
+    // Place tip one block before the disable height, so new block height
+    // (tip + 1) is still below the threshold. Avoid a retarget boundary.
+    CBlockIndex pindexLast;
+    pindexLast.pprev = nullptr;
+    pindexLast.nHeight = consensus.nMinDiffDisableHeight - 2;
+    BOOST_REQUIRE((pindexLast.nHeight + 1) % consensus.DifficultyAdjustmentInterval() != 0);
+    pindexLast.nTime = 1714777860;
+    pindexLast.nBits = normalBits;
+
+    // Block whose timestamp is 21 minutes after the tip (> 2 * nPowTargetSpacing)
+    CBlockHeader block;
+    block.nTime = pindexLast.nTime + consensus.nPowTargetSpacing * 2 + 60;
+
+    // Before the fork height, min-difficulty should be returned
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&pindexLast, &block, consensus), nProofOfWorkLimit);
+}
+
+/* Test that min-difficulty blocks are rejected at and after nMinDiffDisableHeight */
+BOOST_AUTO_TEST_CASE(mindiff_at_disable_height)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, ChainType::TESTNET4);
+    const auto& consensus = chainParams->GetConsensus();
+
+    const unsigned int normalBits = 0x1c0fffff;
+
+    // Tip is at disable height - 1, so new block height == disable height.
+    // Avoid retarget boundary.
+    CBlockIndex pindexLast;
+    pindexLast.pprev = nullptr;
+    pindexLast.nHeight = consensus.nMinDiffDisableHeight - 1;
+    BOOST_REQUIRE((pindexLast.nHeight + 1) % consensus.DifficultyAdjustmentInterval() != 0);
+    pindexLast.nTime = 1714777860;
+    pindexLast.nBits = normalBits;
+
+    // Block with 21-minute gap — would have triggered min-difficulty before the fork
+    CBlockHeader block;
+    block.nTime = pindexLast.nTime + consensus.nPowTargetSpacing * 2 + 60;
+
+    // At the fork height, the previous difficulty must be preserved
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&pindexLast, &block, consensus), normalBits);
+}
+
+/* Test that min-difficulty blocks are rejected well after nMinDiffDisableHeight */
+BOOST_AUTO_TEST_CASE(mindiff_after_disable_height)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, ChainType::TESTNET4);
+    const auto& consensus = chainParams->GetConsensus();
+
+    const unsigned int normalBits = 0x1c0fffff;
+
+    // Tip is well past the disable height. Avoid retarget boundary.
+    CBlockIndex pindexLast;
+    pindexLast.pprev = nullptr;
+    pindexLast.nHeight = consensus.nMinDiffDisableHeight + 1000;
+    BOOST_REQUIRE((pindexLast.nHeight + 1) % consensus.DifficultyAdjustmentInterval() != 0);
+    pindexLast.nTime = 1714777860;
+    pindexLast.nBits = normalBits;
+
+    // Large gap — 1 hour
+    CBlockHeader block;
+    block.nTime = pindexLast.nTime + 3600;
+
+    // After the fork, must keep the real difficulty
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&pindexLast, &block, consensus), normalBits);
+}
+
+/* Test PermittedDifficultyTransition respects nMinDiffDisableHeight */
+BOOST_AUTO_TEST_CASE(permitted_difficulty_transition_mindiff_disable)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, ChainType::TESTNET4);
+    const auto& consensus = chainParams->GetConsensus();
+
+    const unsigned int normalBits = 0x1c0fffff;
+    const unsigned int powLimitBits = UintToArith256(consensus.powLimit).GetCompact();
+
+    // Before the fork: any transition is permitted (min-difficulty allowed)
+    BOOST_CHECK(PermittedDifficultyTransition(consensus, consensus.nMinDiffDisableHeight - 1, normalBits, powLimitBits));
+
+    // At the fork height: transition to powLimit is no longer blanket-permitted
+    BOOST_CHECK(!PermittedDifficultyTransition(consensus, consensus.nMinDiffDisableHeight, normalBits, powLimitBits));
+
+    // After the fork height: same
+    BOOST_CHECK(!PermittedDifficultyTransition(consensus, consensus.nMinDiffDisableHeight + 100, normalBits, powLimitBits));
+}
+
 BOOST_AUTO_TEST_CASE(ChainParams_MAIN_sanity)
 {
     sanity_check_chainparams(*m_node.args, ChainType::MAIN);
