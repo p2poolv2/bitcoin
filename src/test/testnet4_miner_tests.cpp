@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixUpdateTimeClampsWhenNowPastCap)
     pindexPrev.nBits = UintToArith256(consensus.powLimit).GetCompact();
 
     // Wall-clock 3000s past pindexPrev is well above the 1200s cap.
-    NodeClockContext clock_ctx{std::chrono::seconds{1700000000 + 3000}};
+    SetMockTime(std::chrono::seconds{1700000000 + 3000});
 
     CBlockHeader header;
     header.nTime = 0;
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixUpdateTimeUsesNowWhenBelowCap)
     pindexPrev.nBits = UintToArith256(consensus.powLimit).GetCompact();
 
     // Wall-clock 500s past pindexPrev is below the 1200s cap.
-    NodeClockContext clock_ctx{std::chrono::seconds{1700000000 + 500}};
+    SetMockTime(std::chrono::seconds{1700000000 + 500});
 
     CBlockHeader header;
     header.nTime = 0;
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixUpdateTimeExactlyAtCap)
 
     // Wall-clock exactly at the cap: must be accepted verbatim.
     const int64_t cap_time{1700000000 + consensus.nPowTargetSpacing * 2};
-    NodeClockContext clock_ctx{std::chrono::seconds{cap_time}};
+    SetMockTime(std::chrono::seconds{cap_time});
 
     CBlockHeader header;
     header.nTime = 0;
