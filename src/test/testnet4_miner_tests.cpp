@@ -84,11 +84,11 @@ BOOST_AUTO_TEST_CASE(MiningInterface)
 BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixMaxTimeBeforeFork)
 {
     const auto& consensus = Params().GetConsensus();
-    BOOST_REQUIRE_EQUAL(consensus.min_difficulty_blocks_fix_height, 151200);
+    BOOST_REQUIRE_EQUAL(consensus.min_difficulty_blocks_fix_height, 157248);
 
-    // pindexPrev at height 151198 -> next block height 151199, still pre-fork.
+    // pindexPrev at height 157246 -> next block height 157247, still pre-fork.
     CBlockIndex pindexPrev;
-    pindexPrev.nHeight = 151198;
+    pindexPrev.nHeight = 157246;
     pindexPrev.nTime = 1700000000;
 
     BOOST_CHECK_EQUAL(GetMaximumTime(&pindexPrev, consensus),
@@ -99,10 +99,10 @@ BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixMaxTimeAtFork)
 {
     const auto& consensus = Params().GetConsensus();
 
-    // pindexPrev at height 151200 -> next block height 151201 is the first
+    // pindexPrev at height 157248 -> next block height 157249 is the first
     // non-adjustment block post-fork subject to the cap.
     CBlockIndex pindexPrev;
-    pindexPrev.nHeight = 151200;
+    pindexPrev.nHeight = 157248;
     pindexPrev.nTime = 1700000000;
 
     BOOST_CHECK_EQUAL(GetMaximumTime(&pindexPrev, consensus),
@@ -126,10 +126,10 @@ BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixMaxTimeOnActivationAdjustmentBlock)
 {
     const auto& consensus = Params().GetConsensus();
 
-    // The activation height 151200 = 2016 * 75 is itself a difficulty-
+    // The activation height 157248 = 2016 * 78 is itself a difficulty-
     // adjustment block. The cap must not apply to it.
     CBlockIndex pindexPrev;
-    pindexPrev.nHeight = 151199;
+    pindexPrev.nHeight = 157247;
     pindexPrev.nTime = 1700000000;
 
     BOOST_CHECK_EQUAL(GetMaximumTime(&pindexPrev, consensus),
@@ -140,10 +140,10 @@ BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixMaxTimeOnLaterAdjustmentBlock)
 {
     const auto& consensus = Params().GetConsensus();
 
-    // Next block height 153216 = 2016 * 76 is the first post-activation
+    // Next block height 159264 = 2016 * 79 is the first post-activation
     // adjustment block after the fork epoch. Cap must not apply.
     CBlockIndex pindexPrev;
-    pindexPrev.nHeight = 153215;
+    pindexPrev.nHeight = 159263;
     pindexPrev.nTime = 1700000000;
 
     BOOST_CHECK_EQUAL(GetMaximumTime(&pindexPrev, consensus),
@@ -169,10 +169,10 @@ BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixMaxTimeDisabledOnOtherChains)
 BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixUpdateTimeClampsWhenNowPastCap)
 {
     const auto& consensus = Params().GetConsensus();
-    // Height 151201 is post-fork and not a retarget boundary, so
+    // Height 157249 is post-fork and not a retarget boundary, so
     // GetNextWorkRequired does not need to walk the pprev chain.
     CBlockIndex pindexPrev;
-    pindexPrev.nHeight = 151201;
+    pindexPrev.nHeight = 157249;
     pindexPrev.nTime = 1700000000;
     pindexPrev.nBits = UintToArith256(consensus.powLimit).GetCompact();
 
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixUpdateTimeUsesNowWhenBelowCap)
 {
     const auto& consensus = Params().GetConsensus();
     CBlockIndex pindexPrev;
-    pindexPrev.nHeight = 151201;
+    pindexPrev.nHeight = 157249;
     pindexPrev.nTime = 1700000000;
     pindexPrev.nBits = UintToArith256(consensus.powLimit).GetCompact();
 
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(MinDifficultyBlocksFixUpdateTimeExactlyAtCap)
 {
     const auto& consensus = Params().GetConsensus();
     CBlockIndex pindexPrev;
-    pindexPrev.nHeight = 151201;
+    pindexPrev.nHeight = 157249;
     pindexPrev.nTime = 1700000000;
     pindexPrev.nBits = UintToArith256(consensus.powLimit).GetCompact();
 
