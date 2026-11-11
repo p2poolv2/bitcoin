@@ -491,8 +491,8 @@ public:
         consensus.CSVHeight = 1;
         consensus.SegwitHeight = 1;
         consensus.MinBIP9WarningHeight = 0;
-        // Testnet 5 has a raised minimum difficulty of ~1,000,000, i.e. nBits 0x1a0fffff.
-        consensus.powLimit = uint256{"0000000000000fffff0000000000000000000000000000000000000000000000"};
+        // Local patch: lapis.erisian.com.au rehearsal chain, nBits 0x1a7fff80 (diff 131072).
+        consensus.powLimit = uint256{"0000000000007fff800000000000000000000000000000000000000000000000"};
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
         consensus.nPowTargetSpacing = 10 * 60;
         // Testnet 5 has no minimum-difficulty exception.
@@ -529,22 +529,20 @@ public:
         m_assumed_blockchain_size = 0;
         m_assumed_chain_state_size = 0;
 
-        // TODO: the genesis block has not been mined yet. Everything only known
-        // once it is mined is zeroed out and marked below, so the header does not
-        // satisfy its own nBits and the node cannot run on testnet5 yet.
-        const char* testnet5_genesis_msg = ""; // BIP95 leaves the message empty
-        // TODO: use a recent mainnet block hash as the pubkey
-        const CScript testnet5_genesis_script = CScript() << "000000000000000000000000000000000000000000000000000000000000000000"_hex << OP_CHECKSIG;
+        // Local patch: genesis of the lapis.erisian.com.au rehearsal chain,
+        // values from https://lapis.erisian.com.au/chain.json (.genesis).
+        const char* testnet5_genesis_msg = "2026-11-09 975209 000000000000000000016bd0ac174bb6916cc35f96a9927fcc13914beabf888b";
+        const CScript testnet5_genesis_script = CScript() << OP_RETURN << "8120f26a0014f839"_hex;
         genesis = CreateGenesisBlock(testnet5_genesis_msg,
                 testnet5_genesis_script,
-                0, // TODO: nTime
-                0, // TODO: nNonce
-                0x1a0fffff,
-                1,
+                1794253005,
+                0x0f270180,
+                0x1a7fff80,
+                0x24e3a000,
                 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256{"e9a8fd2b0c78e01702e9ede3f79f2217142c25fb70e22dd86bff2879afd5761e"}); // TODO
-        assert(genesis.hashMerkleRoot == uint256{"b3f9a8c19683a9bb0475e37b13a77ed3051965c642da2aef093c7fe3eb08e3bc"}); // TODO
+        assert(consensus.hashGenesisBlock == uint256{"00000000000027fb17bedec4b497ca06af49783d3618ecb6ed98e357db6c42d7"});
+        assert(genesis.hashMerkleRoot == uint256{"0c24fb78382cfdd3fd8da4c9d687a60ae230cab45bfc12201bef01b4c216f02b"});
 
         // No DNS or fixed seeds defined for Testnet 5 yet.
         vFixedSeeds.clear();
